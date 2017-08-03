@@ -81,7 +81,8 @@ namespace Quobject.EngineIoClientDotNet.Client.Transports
         {
             var log = LogManager.GetLogger(Global.CallerName());
             log.Info("ws_MessageReceived e.Message= " + e.Message);
-            this.OnData(e.Message);
+            //this.OnData(e.Message);
+            messageQueue.Enqueue(e.Message);
         }
 
         void ws_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)

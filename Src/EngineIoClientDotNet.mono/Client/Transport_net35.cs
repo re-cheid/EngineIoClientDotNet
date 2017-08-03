@@ -7,12 +7,47 @@ using Quobject.EngineIoClientDotNet.Modules;
 using Quobject.EngineIoClientDotNet.Parser;
 using System;
 using System.Collections.Generic;
-
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Quobject.EngineIoClientDotNet.Client
 {
+    public class MessageQueue<T>
+    {
+        private object lockObject;
+        private Queue<T> queue;
+
+        public MessageQueue()
+        {
+            queue = new Queue<T>();
+            lockObject = new object();
+        }
+
+        public void Enqueue(T item)
+        {
+            Monitor.Enter(lockObject);
+            queue.Enqueue(item);
+            Monitor.Exit(lockObject);
+        }
+
+        public T Dequeue()
+        {
+            Monitor.Enter(lockObject);
+            while(queue.Count == 0)
+            {
+                Monitor.Exit(lockObject);
+                System.Threading.Thread.Sleep(1);
+                Monitor.Enter(lockObject);
+            }
+            T item = queue.Dequeue();
+            Monitor.Exit(lockObject);
+            return item;
+        }
+    }
+
     public abstract class Transport : Emitter
     {
+        protected MessageQueue<string> messageQueue;
         protected enum ReadyStateEnum
         {
             OPENING,
@@ -84,6 +119,8 @@ namespace Quobject.EngineIoClientDotNet.Client
             this.ForceBase64 = options.ForceBase64;
             this.ForceJsonp = options.ForceJsonp;
             this.Cookie = options.GetCookiesAsString();
+            
+            messageQueue = new MessageQueue<string>();
         }
 
         protected Transport OnError(string message, Exception exception)
@@ -98,6 +135,14 @@ namespace Quobject.EngineIoClientDotNet.Client
             ReadyState = ReadyStateEnum.OPEN;
             Writable = true;
             Emit(EVENT_OPEN);
+            Task.Run(() =>
+            {
+                while (ReadyState == ReadyStateEnum.OPEN)
+                {
+                    System.Threading.Thread.Sleep(0);
+                    OnData(messageQueue.Dequeue());
+                }
+            });
         }
 
         protected void OnClose()

@@ -564,7 +564,7 @@ namespace Quobject.EngineIoClientDotNet.Client
                 Ping();
                 OnHeartbeat(PingTimeout);
                 log2.Info("EasyTimer SetPing finish");
-            }, (int)PingInterval);
+            }, (int)PingInterval, false);
         }
 
         private void Ping()
@@ -1074,7 +1074,7 @@ namespace Quobject.EngineIoClientDotNet.Client
                     CallbackBuffer = new List<Action>();
 
                     PrevBufferLen = 0;
-                }, 1);
+                }, 1, false);
 
 
                 if (this.Transport != null)
@@ -1139,7 +1139,7 @@ namespace Quobject.EngineIoClientDotNet.Client
                 }
                 OnClose("ping timeout");
                 log2.Info("EasyTimer OnHeartbeat finish");
-            },(int) timeout);
+            },(int) timeout, false);
 
         }
 
